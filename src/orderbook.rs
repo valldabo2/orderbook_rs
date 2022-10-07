@@ -1,48 +1,62 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-use std::collections::{HashMap, VecDeque};
 use ordered_float::OrderedFloat;
+use std::collections::{HashMap, VecDeque};
 
-use crate::{order::{Order, Side}, price_levels::PriceLevels, price_level::PriceLevel};
+use crate::{
+    order::{Order, Side},
+    price_level::PriceLevel,
+    price_levels::PriceLevels,
+};
 
 pub struct OrderBook {
     bid_levels: PriceLevels,
     ask_levels: PriceLevels,
-    orders: HashMap<i64, Order>
+    orders: HashMap<i64, Order>,
 }
 
 fn match_order(o: &Order, pls: &mut PriceLevels) -> Matches {
-    let mut o_ = o.clone();
-    let mut mo = VecDeque::new();
-    
+    let mut ma = Matches {
+        matches: VecDeque::new(),
+        order: o.clone(),
+    };
     for (p, pl) in pls.levels.iter() {
-        if aggressive(&o_, &p) {
+        if aggressive(&ma.order, &p) {
             for nm in pl.orders.iter() {
-                if o_.size >= nm.size {
+                if ma.order.size >= nm.size {
                     // Full Match
-                    let m = Match{order: *nm, size: nm.size};
-                    mo.push_back(m);
-                    o_.size -= nm.size;
+                    let m = Match {
+                        order: *nm,
+                        size: nm.size,
+                    };
+                    ma.matches.push_back(m);
+                    ma.order.size -= nm.size;
                 } else {
                     // Partial Match
-                    let m = Match{order: *nm, size: o_.size};
-                    mo.push_back(m);
-                    o_.size = 0.0;
+                    let m = Match {
+                        order: *nm,
+                        size: ma.order.size,
+                    };
+                    ma.matches.push_back(m);
+                    ma.order.size = 0.0;
+                    return ma
                 }
             }
+        } else {
+            return ma
         }
     }
-    Matches { matches: mo, order: o_}
+    return ma;
 }
 
 struct Match {
     order: Order,
-    size: f64
+    size: f64,
 }
 pub struct Matches {
     matches: VecDeque<Match>,
-    order: Order
+    order: Order,
 }
 
 impl Matches {
@@ -61,10 +75,10 @@ fn aggressive(o: &Order, p: &OrderedFloat<f64>) -> bool {
 
 impl OrderBook {
     pub fn new() -> OrderBook {
-        OrderBook { 
-            bid_levels: PriceLevels::new(false), 
+        OrderBook {
+            bid_levels: PriceLevels::new(false),
             ask_levels: PriceLevels::new(true),
-            orders: HashMap::new()
+            orders: HashMap::new(),
         }
     }
 
@@ -91,7 +105,7 @@ impl OrderBook {
         }
     }
 
-    pub fn place(&mut self, o: &Order) -> Matches {   
+    pub fn place(&mut self, o: &Order) -> Matches {
         let mut pls: &mut PriceLevels;
         if o.side == Side::Buy {
             pls = &mut self.ask_levels;
@@ -99,7 +113,6 @@ impl OrderBook {
             pls = &mut self.bid_levels;
         }
 
-        // let orders = &mut self.orders;
         let mo = match_order(o, pls);
 
         let orders = &mut self.orders;
@@ -128,7 +141,6 @@ impl OrderBook {
             pls.insert(mo.order);
         }
         mo
-        
     }
 
     fn bid(&mut self) -> Option<&PriceLevel> {
@@ -138,7 +150,6 @@ impl OrderBook {
     fn ask(&mut self) -> Option<&PriceLevel> {
         self.ask_levels.best_level()
     }
-
 }
 
 #[cfg(test)]

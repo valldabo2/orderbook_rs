@@ -7,12 +7,15 @@ use crate::order::Order;
 
 pub struct PriceLevel {
     pub orders: VecDeque<Order>,
-    pub size: f64
+    pub size: f64,
 }
 
 impl PriceLevel {
     pub fn default() -> PriceLevel {
-        PriceLevel{orders:VecDeque::new(), size: 0.0}
+        PriceLevel {
+            orders: VecDeque::new(),
+            size: 0.0,
+        }
     }
     pub fn add(&mut self, o: Order) {
         self.orders.push_back(o);
@@ -24,7 +27,7 @@ impl PriceLevel {
             self.orders.remove(pos);
         }
     }
-    
+
     pub fn is_empty(&self) -> bool {
         self.orders.is_empty()
     }
@@ -33,7 +36,6 @@ impl PriceLevel {
         Some(self.orders.front().unwrap().price.0)
     }
 }
-
 
 #[cfg(test)]
 mod tests {

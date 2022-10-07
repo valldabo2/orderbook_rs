@@ -1,9 +1,9 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
+use ordered_float::OrderedFloat;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
-use ordered_float::OrderedFloat;
 
 use crate::order::Order;
 use crate::price_level::PriceLevel;
@@ -11,15 +11,19 @@ use crate::price_level::PriceLevel;
 pub struct PriceLevels {
     pub levels: BTreeMap<OrderedFloat<f64>, PriceLevel>,
     orders: HashMap<i64, Order>,
-    ask: bool
+    ask: bool,
 }
 
 impl PriceLevels {
     pub fn new(ask: bool) -> PriceLevels {
-        PriceLevels{ levels: BTreeMap::new(), orders: HashMap::new(), ask}
+        PriceLevels {
+            levels: BTreeMap::new(),
+            orders: HashMap::new(),
+            ask,
+        }
     }
     pub fn insert(&mut self, o: Order) {
-        if self.levels.contains_key(&o.price){
+        if self.levels.contains_key(&o.price) {
             let pl = self.levels.get_mut(&o.price).unwrap();
             pl.add(o);
         } else {
@@ -53,7 +57,6 @@ impl PriceLevels {
         let size_change = new_size - o.size;
         pl.size += size_change;
         o.size = new_size;
-        
     }
 
     fn _best_price(&self) -> Option<&OrderedFloat<f64>> {
@@ -74,21 +77,18 @@ impl PriceLevels {
         let bp = self._best_price();
         match bp {
             Some(bp) => return Some(bp.clone().0),
-            None => return None
+            None => return None,
         }
-
     }
 
     pub fn best_level(&self) -> Option<&PriceLevel> {
         let bp = self._best_price();
         match bp {
             Some(bp) => return Some(self.levels.get(bp).unwrap()),
-            None => None
+            None => None,
         }
     }
-
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -109,7 +109,7 @@ mod tests {
     #[test]
     fn insert_bid() {
         let o1 = Order::new(9.0, 1.0, 0, Side::Buy);
-        let o2 = Order::new(10.0, 1.0, 1,Side::Buy);
+        let o2 = Order::new(10.0, 1.0, 1, Side::Buy);
         let mut pls = PriceLevels::new(false);
         pls.insert(o1);
         pls.insert(o2);
